@@ -9,6 +9,7 @@ export class AuthController {
 
   @Post('google-login')
   async googleLogin(@Body() body: any) {
+    console.log("body:: ", body)
     const user = await this.authService.validateUserByGoogle(body);
     const token = await this.authService.login(user);
     return { token: token, user: user }

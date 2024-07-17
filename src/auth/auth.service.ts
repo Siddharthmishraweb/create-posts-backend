@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 
@@ -32,5 +32,13 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  async validateUserByJwt(payload: any): Promise<any> {
+    const user = await this.usersService.findOneById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return user;
   }
 }
