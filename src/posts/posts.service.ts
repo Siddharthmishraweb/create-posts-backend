@@ -1,76 +1,119 @@
-/* eslint-disable */
-// posts.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Post, PostDocument } from '../users/schemas/post.schema';
-import { User, UserDocument } from '../users/schemas/user.schema';
+import { Post, PostDocument } from '../schemas/post.schema';
+import { User, UserDocument } from '../schemas/user.schema';
 
 @Injectable()
 export class PostsService {
-  constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>,  @InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
   async findAll() {
-    return this.postModel.find().populate('user').exec();
+    try {
+      return await this.postModel.find().populate('user').populate('comments.user').exec();
+    } catch (error) {
+      throw new Error('Error fetching posts');
+    }
   }
 
   async findOne(id: string) {
-    const post = await this.postModel.findById(id).populate('user').exec();
-    if (!post) {
-      throw new NotFoundException('Post not found');
+    try {
+      const post = await this.postModel.findById(id).populate('user').populate('comments.user').exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+      return post;
+    } catch (error) {
+      throw new Error('Error fetching post');
     }
-    return post;
   }
 
-  async create(createPostDto: any) {
-    console.log("createPostDto:: ", createPostDto);
-    const user = await this.userModel.findOne({ email: createPostDto.user }).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
+  async create(createPostDto: any, user: any) {
+    try {
+      console.log("hooooooooooooooooo", user)
+      const userEntity = await this.userModel.findById(user.sub).exec();
+      console.log("user:: ", user);
+      if (!userEntity) {
+        throw new UnauthorizedException('User not authorized');
+      }
+      createPostDto.user = userEntity._id;
+      const createdPost = new this.postModel(createPostDto);
+      return await createdPost.save();
+    } catch (error) {
+      throw new Error('Error creating post');
     }
-    createPostDto.user = user._id;
-    const createdPost = new this.postModel(createPostDto);
-    return await createdPost.save();
   }
 
   async remove(id: string) {
-    const post = await this.postModel.findByIdAndDelete(id).exec();
-    if (!post) {
-      throw new NotFoundException('Post not found');
+    try {
+      const post = await this.postModel.findByIdAndDelete(id).exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+      return post;
+    } catch (error) {
+      throw new Error('Error deleting post');
     }
-    return post;
   }
 
-  async likePost(id: string) {
-    const post = await this.postModel.findById(id).exec();
-    if (!post) {
-      throw new NotFoundException('Post not found');
+  async likePost(id: string, user: any) {
+    try {
+      const post = await this.postModel.findById(id).populate('user').populate('comments.user').exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+      if (!post.likedBy.includes(user.sub)) {
+        post.likes += 1;
+        post.likedBy.push(user.sub);
+      }
+      return await post.save();
+    } catch (error) {
+      throw new Error('Error liking post');
     }
-    post.likes += 1;
-    return post.save();
   }
 
-  async unlikePost(id: string) {
-    const post = await this.postModel.findById(id).exec();
-    if (!post) {
-      throw new NotFoundException('Post not found');
+  async unlikePost(id: string, user: any) {
+    try {
+      const post = await this.postModel.findById(id).exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+      const userIndex = post.likedBy.indexOf(user.sub);
+      if (userIndex !== -1) {
+        post.likes -= 1;
+        post.likedBy.splice(userIndex, 1);
+      }
+      return await post.save();
+    } catch (error) {
+      throw new Error('Error unliking post');
     }
-    if (post.likes > 0) {
-      post.likes -= 1;
-    }
-    return post.save();
   }
 
-  async addComment(id: string, comment: { user: string, comment: string }) {
-    const post = await (await this.postModel.findById(id).populate('user'));
-    const user = await this.userModel.findOne({ _id: Object(comment.user) }).exec();
-    console.log("user::: ", user)
-    if (!post) {
-      throw new NotFoundException('Post not found');
+  async addComment(id: string, comment: { comment: string }, user: any) {
+    try {
+      const post = await this.postModel.findById(id).populate('user').populate('comments.user').exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+      const userEntity = await this.userModel.findById(user.sub).exec();
+      console.log("userEntity::  ", userEntity)
+      if (!userEntity) {
+        throw new NotFoundException('User not found');
+      }
+      const commentWithTimestamp = {
+        user: Object(userEntity._id),
+        comment: comment.comment,
+        createdAt: new Date(),
+      };
+      post.comments.push(commentWithTimestamp);
+      await post.save();
+      return post.populate('comments.user')
+       
+    } catch (error) {
+      throw new Error('Error adding comment');
     }
-    const commentWithTimestamp = { ...comment, createdAt: new Date() , ...user};
-    console.log("commentWithTimestamp:: ", commentWithTimestamp)
-    post.comments.push(commentWithTimestamp);
-    return post.save();
   }
 }
