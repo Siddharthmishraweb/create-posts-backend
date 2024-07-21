@@ -1,0 +1,5 @@
+export const config = {
+    mongoUri: 'mongodb+srv://mishrasiddharth1999:Reenter2@blog.fugwx6s.mongodb.net/?retryWrites=true&w=majority&appName=blog',
+    bearerToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1pc2hyYXNpZGRoYXJ0aDE5OTlAZ21haWwuY29tIiwibmFtZSI6IlNpZGRoYXJ0aCBNaXNocmEiLCJwcm9maWxlUGljIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTGJjQ3VXZkhWTlZwbVcxRVZPdW4xNkR1SUxMWTFiZnNSS1lON1BLQzlqMm8tLUVTSmdzZz1zOTYtYyIsInN1YiI6IjY2OTdmOTk3ZWMwMDI2Y2QwMWNlYzM4NSIsImlhdCI6MTcyMTU2MDc1MCwiZXhwIjoxNzIxNzc2NzUwfQ.AtmYDX__yqPfoexpEbq0Lpc3FqxKEV9EgPD8pyTvp7A',
+  };
+  
