@@ -61,7 +61,7 @@ export class PostsService {
 
   async likePost(id: string, user: any) {
     try {
-      const post = await this.postModel.findById(id).exec();
+      const post = await this.postModel.findById(id).populate('user').populate('comments.user').exec();
       if (!post) {
         throw new NotFoundException('Post not found');
       }
@@ -94,7 +94,7 @@ export class PostsService {
 
   async addComment(id: string, comment: { comment: string }, user: any) {
     try {
-      const post = await this.postModel.findById(id).exec();
+      const post = await this.postModel.findById(id).populate('user').populate('comments.user').exec();
       if (!post) {
         throw new NotFoundException('Post not found');
       }
