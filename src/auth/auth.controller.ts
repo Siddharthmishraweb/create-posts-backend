@@ -7,6 +7,11 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Get()
+  getWelcome(@Res() res) {
+    return res.send('Welcome to the Blogify auth API!');
+  }
+
   @Post('google-login')
   async googleLogin(@Body() body: any) {
     console.log("body:: ", body)
